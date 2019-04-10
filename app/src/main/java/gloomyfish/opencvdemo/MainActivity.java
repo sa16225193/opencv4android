@@ -1,7 +1,10 @@
 package gloomyfish.opencvdemo;
 
+import android.Manifest;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -17,6 +20,7 @@ import com.book.datamodel.SectionsListViewAdaptor;
 import org.opencv.android.OpenCVLoader;
 
 public class MainActivity extends AppCompatActivity {
+    public static final int REQUEST_CODE = 1001;
     private String CV_TAG = "OpenCV";
 
     @Override
@@ -24,15 +28,23 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         iniLoadOpenCV();
+        initPermissions();
         initListView();
     }
 
     private void iniLoadOpenCV() {
         boolean success = OpenCVLoader.initDebug();
-        if(success) {
+        if (success) {
             Log.i(CV_TAG, "OpenCV Libraries loaded...");
         } else {
             Toast.makeText(this.getApplicationContext(), "WARNING: Could not load OpenCV Libraries!", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void initPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    Manifest.permission.CAMERA}, REQUEST_CODE);
         }
     }
 
