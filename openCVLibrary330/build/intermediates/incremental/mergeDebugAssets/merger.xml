@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merger version="3"><dataSet config="main"><source path="/Users/liuyong/Downloads/opencv4android-master/samples/OpencvDemo/openCVLibrary330/src/main/assets"/><source path="/Users/liuyong/Downloads/opencv4android-master/samples/OpencvDemo/openCVLibrary330/build/generated/assets/shaders/debug"/></dataSet><dataSet config="debug"><source path="/Users/liuyong/Downloads/opencv4android-master/samples/OpencvDemo/openCVLibrary330/src/debug/assets"/></dataSet></merger>
