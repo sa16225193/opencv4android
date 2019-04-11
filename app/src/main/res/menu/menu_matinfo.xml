@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/bitmap2MatDemo"
+        android:title="bitmap2MatDemo" />
+    <item android:id="@+id/mat2BitmapDemo"
+        android:title="mat2BitmapDemo" />
+    <item android:id="@+id/basicDrawOnCanvas"
+        android:title="basicDrawOnCanvas" />
+    <item android:id="@+id/basicDrawOnMat"
+        android:title="basicDrawOnMat" />
+    <item android:id="@+id/getMatInfo"
+        android:title="getMatInfo" />
+    <item android:id="@+id/getBitmapInfo"
+        android:title="getBitmapInfo" />
+    <item android:id="@+id/scanPixelsDemo"
+        android:title="scanPixelsDemo" />
+</menu>

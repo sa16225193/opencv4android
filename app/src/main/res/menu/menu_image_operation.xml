@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/blur"
+        android:title="均值模糊" />
+    <item android:id="@+id/GaussianBlur"
+        android:title="高斯模糊" />
+    <item android:id="@+id/medianBlur"
+        android:title="中值模糊" />
+    <item android:id="@+id/dilate"
+        android:title="膨胀(最大值模糊)" />
+    <item android:id="@+id/erode"
+        android:title="腐蚀(最小值模糊)" />
+    <item android:id="@+id/bilateralFilter"
+        android:title="高斯双边滤波" />
+    <item android:id="@+id/pyrMeanShiftFiltering"
+        android:title="均值迁移滤波" />
+    <item android:id="@+id/customFilter"
+        android:title="自定义滤波" />
+    <item android:id="@+id/morphologyDemo"
+        android:title="形态学滤波" />
+    <item android:id="@+id/thresholdDemo"
+        android:title="阈值化滤波" />
+    <item android:id="@+id/adpThresholdDemo"
+        android:title="自适应阈值滤波" />
+</menu>

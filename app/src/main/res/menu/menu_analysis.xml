@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/sobelDemo"
+        android:title="Sobel梯度" />
+    <item android:id="@+id/scharrDemo"
+        android:title="Scharr梯度" />
+    <item android:id="@+id/laplianDemo"
+        android:title="拉普拉斯算子" />
+    <item android:id="@+id/edgeDemo"
+        android:title="Canny边缘检测" />
+    <item android:id="@+id/houghLinePDemo"
+        android:title="霍夫直线检测" />
+    <item android:id="@+id/houghLinesDemo"
+        android:title="霍夫直线检测2" />
+    <item android:id="@+id/houghCircleDemo"
+        android:title="霍夫圆形检测" />
+    <item android:id="@+id/findContoursDemo"
+        android:title="二值化的图像进行轮廓发现" />
+    <item android:id="@+id/measureContours"
+        android:title="图像的全部轮廓" />
+    <item android:id="@+id/displayHistogram"
+        android:title="绘制直方图数据" />
+    <item android:id="@+id/equalizeHistogram"
+        android:title="直方图均衡化" />
+    <item android:id="@+id/compareHistogram"
+        android:title="直方图比较" />
+    <item android:id="@+id/backProjectionHistogram"
+        android:title="直方图反向投影" />
+    <item android:id="@+id/matchTemplateDemo"
+        android:title="模板匹配" />
+</menu>

@@ -47,13 +47,13 @@ public class EyeRenderActivity extends AppCompatActivity implements CameraBridge
     private JavaCameraView mOpenCvCameraView;
     private String TAG = "EyeRenderActivity";
     private FaceExtraLayer mNativeDetector;
-    private float mRelativeFaceSize   = 0.2f;
+    private float mRelativeFaceSize = 0.2f;
     private static final Scalar FACE_RECT_COLOR = new Scalar(255, 0, 0);
     private static final Scalar EYE_RECT_COLOR = new Scalar(0, 0, 255);
     private static final Scalar EYE_COLOR = new Scalar(0, 255, 255);
     private Mat k1;
     private Mat k2;
-    private int mAbsoluteFaceSize   = 0;
+    private int mAbsoluteFaceSize = 0;
     private CascadeClassifier eyeDetector;
     Mat leftEye_template;
     Mat rightEye_template;
@@ -64,7 +64,7 @@ public class EyeRenderActivity extends AppCompatActivity implements CameraBridge
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_eye_render);
         //for 6.0 and 6.0 above, apply permission
-        if(Build.VERSION.SDK_INT >= 23) {
+        if (Build.VERSION.SDK_INT >= 23) {
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE},
                     1);
@@ -77,10 +77,14 @@ public class EyeRenderActivity extends AppCompatActivity implements CameraBridge
         mOpenCvCameraView.setCvCameraViewListener(this);
         mOpenCvCameraView.enableFpsMeter();
 
-        // 前置摄像头开启预览
-        mOpenCvCameraView.setCameraIndex(1);
-        mOpenCvCameraView.enableView();
-        
+        try {
+//         前置摄像头开启预览
+            mOpenCvCameraView.setCameraIndex(1);
+            mOpenCvCameraView.enableView();
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage());
+        }
+
         // 初始化人脸跟踪器
         try {
             initDetectBasedTracker();
@@ -91,19 +95,19 @@ public class EyeRenderActivity extends AppCompatActivity implements CameraBridge
             // 初始化结构元素
             k1 = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3), new Point(-1, -1));
             k2 = Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, new Size(10, 10), new Point(-1, -1));
-        } catch (IOException ioe) {
+        } catch (Exception ioe) {
             ioe.printStackTrace();
         }
     }
 
-    private void initEyesDetector()throws IOException {
+    private void initEyesDetector() throws IOException {
         InputStream input = getResources().openRawResource(R.raw.haarcascade_eye_tree_eyeglasses);
         File cascadeDir = this.getDir("cascade", Context.MODE_PRIVATE);
         File file = new File(cascadeDir.getAbsoluteFile(), "haarcascade_eye_tree_eyeglasses.xml");
         FileOutputStream output = new FileOutputStream(file);
         byte[] buff = new byte[1024];
         int len = 0;
-        while((len = input.read(buff)) != -1) {
+        while ((len = input.read(buff)) != -1) {
             output.write(buff, 0, len);
         }
         input.close();
@@ -121,7 +125,7 @@ public class EyeRenderActivity extends AppCompatActivity implements CameraBridge
         FileOutputStream output = new FileOutputStream(file);
         byte[] buff = new byte[1024];
         int len = 0;
-        while((len = input.read(buff)) != -1) {
+        while ((len = input.read(buff)) != -1) {
             output.write(buff, 0, len);
         }
         input.close();
@@ -151,14 +155,14 @@ public class EyeRenderActivity extends AppCompatActivity implements CameraBridge
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         Mat frame = inputFrame.rgba();
         Core.flip(frame, frame, 1);
-        if(this.getResources().getConfiguration().orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT) {
+        if (this.getResources().getConfiguration().orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT) {
             Core.rotate(frame, frame, Core.ROTATE_90_CLOCKWISE);
         }
         process(frame);
         return frame;
     }
 
-    public void process(Mat frame){
+    public void process(Mat frame) {
         if (mAbsoluteFaceSize == 0) {
             int height = frame.rows();
             if (Math.round(height * mRelativeFaceSize) > 0) {
@@ -179,54 +183,54 @@ public class EyeRenderActivity extends AppCompatActivity implements CameraBridge
     }
 
     private void selectEyesArea(Rect faceROI, Mat frame) {
-        if(option < 2) return;
-        int offy = (int)(faceROI.height * 0.35f);
-        int offx = (int)(faceROI.width * 0.15f);
-        int sh = (int)(faceROI.height * 0.18f);
-        int sw = (int)(faceROI.width * 0.32f);
-        int gap = (int)(faceROI.width * 0.025f);
-        Point lp_eye = new Point(faceROI.tl().x+offx, faceROI.tl().y+offy);
-        Point lp_end = new Point(lp_eye.x+sw-gap, lp_eye.y+sh);
+        if (option < 2) return;
+        int offy = (int) (faceROI.height * 0.35f);
+        int offx = (int) (faceROI.width * 0.15f);
+        int sh = (int) (faceROI.height * 0.18f);
+        int sw = (int) (faceROI.width * 0.32f);
+        int gap = (int) (faceROI.width * 0.025f);
+        Point lp_eye = new Point(faceROI.tl().x + offx, faceROI.tl().y + offy);
+        Point lp_end = new Point(lp_eye.x + sw - gap, lp_eye.y + sh);
         Imgproc.rectangle(frame, lp_eye, lp_end, EYE_RECT_COLOR, 2);
 
-        int right_offx = (int)(faceROI.width * 0.095f);
-        int rew = (int)(sw *0.81f);
-        Point rp_eye = new Point(faceROI.x+faceROI.width/2+right_offx, faceROI.tl().y+offy);
-        Point rp_end = new Point(rp_eye.x+rew, rp_eye.y+sh);
+        int right_offx = (int) (faceROI.width * 0.095f);
+        int rew = (int) (sw * 0.81f);
+        Point rp_eye = new Point(faceROI.x + faceROI.width / 2 + right_offx, faceROI.tl().y + offy);
+        Point rp_end = new Point(rp_eye.x + rew, rp_eye.y + sh);
         Imgproc.rectangle(frame, rp_eye, rp_end, EYE_RECT_COLOR, 2);
 
         // 使用级联分类器检测眼睛
-        if(option < 3) return;
+        if (option < 3) return;
         MatOfRect eyes = new MatOfRect();
 
         Rect left_eye_roi = new Rect();
-        left_eye_roi.x = (int)lp_eye.x;
-        left_eye_roi.y = (int)lp_eye.y;
-        left_eye_roi.width = (int)(lp_end.x - lp_eye.x);
-        left_eye_roi.height = (int)(lp_end.y - lp_eye.y);
+        left_eye_roi.x = (int) lp_eye.x;
+        left_eye_roi.y = (int) lp_eye.y;
+        left_eye_roi.width = (int) (lp_end.x - lp_eye.x);
+        left_eye_roi.height = (int) (lp_end.y - lp_eye.y);
 
         Rect right_eye_roi = new Rect();
-        right_eye_roi.x = (int)rp_eye.x;
-        right_eye_roi.y = (int)rp_eye.y;
-        right_eye_roi.width = (int)(rp_end.x - rp_eye.x);
-        right_eye_roi.height = (int)(rp_end.y - rp_eye.y);
+        right_eye_roi.x = (int) rp_eye.x;
+        right_eye_roi.y = (int) rp_eye.y;
+        right_eye_roi.width = (int) (rp_end.x - rp_eye.x);
+        right_eye_roi.height = (int) (rp_end.y - rp_eye.y);
 
 
         // 级联分类器
         Mat leftEye = frame.submat(left_eye_roi);
         Mat rightEye = frame.submat(right_eye_roi);
 
-        eyeDetector.detectMultiScale(gray.submat(left_eye_roi), eyes, 1.15, 2, 0, new Size(30,30), new Size());
+        eyeDetector.detectMultiScale(gray.submat(left_eye_roi), eyes, 1.15, 2, 0, new Size(30, 30), new Size());
         Rect[] eyesArray = eyes.toArray();
-        for(int i=0; i<eyesArray.length; i++) {
+        for (int i = 0; i < eyesArray.length; i++) {
             Log.i("EYE_DETECTION", "Found Left Eyes...");
             leftEye.submat(eyesArray[i]).copyTo(leftEye_template);
             detectPupil(leftEye.submat(eyesArray[i]));
             Imgproc.rectangle(leftEye, eyesArray[i].tl(), eyesArray[i].br(), EYE_COLOR, 2);
         }
-        if(eyesArray.length == 0) {
+        if (eyesArray.length == 0) {
             Rect left_roi = matchEyeTemplate(leftEye, true);
-            if(left_roi != null) {
+            if (left_roi != null) {
                 detectPupil(leftEye.submat(left_roi));
                 Imgproc.rectangle(leftEye, left_roi.tl(), left_roi.br(), EYE_COLOR, 2);
             } else {
@@ -236,21 +240,20 @@ public class EyeRenderActivity extends AppCompatActivity implements CameraBridge
 
         eyes.release();
         eyes = new MatOfRect();
-        eyeDetector.detectMultiScale(gray.submat(right_eye_roi), eyes, 1.15, 2, 0, new Size(30,30), new Size());
+        eyeDetector.detectMultiScale(gray.submat(right_eye_roi), eyes, 1.15, 2, 0, new Size(30, 30), new Size());
         eyesArray = eyes.toArray();
-        for(int i=0; i<eyesArray.length; i++) {
+        for (int i = 0; i < eyesArray.length; i++) {
             Log.i("EYE_DETECTION", "Found Right Eyes...");
             rightEye.submat(eyesArray[i]).copyTo(rightEye_template);
             detectPupil(rightEye.submat(eyesArray[i]));
             Imgproc.rectangle(rightEye, eyesArray[i].tl(), eyesArray[i].br(), EYE_COLOR, 2);
         }
-        if(eyesArray.length == 0) {
+        if (eyesArray.length == 0) {
             Rect right_roi = matchEyeTemplate(rightEye, false);
-            if(right_roi != null) {
+            if (right_roi != null) {
                 detectPupil(rightEye.submat(right_roi));
                 Imgproc.rectangle(rightEye, right_roi.tl(), right_roi.br(), EYE_COLOR, 2);
-            }
-            else {
+            } else {
                 detectPupil(rightEye);
             }
         }
@@ -263,7 +266,7 @@ public class EyeRenderActivity extends AppCompatActivity implements CameraBridge
     }
 
     private void detectPupil(Mat eyeImage) {
-        if(option < 4) return;
+        if (option < 4) return;
         Mat gray = new Mat();
         Mat binary = new Mat();
 
@@ -274,7 +277,7 @@ public class EyeRenderActivity extends AppCompatActivity implements CameraBridge
         Imgproc.morphologyEx(binary, binary, Imgproc.MORPH_OPEN, k2);
 
         //
-        if(option > 4) {
+        if (option > 4) {
             renderEye(eyeImage, binary);
         } else {
             // 轮廓发现
@@ -307,37 +310,37 @@ public class EyeRenderActivity extends AppCompatActivity implements CameraBridge
         int w = eyeImage.cols();
         int h = eyeImage.rows();
         int ch = eyeImage.channels();
-        byte[] data1 = new byte[w*h*ch];
-        byte[] data2 = new byte[w*h*ch];
-        float[] mdata = new float[w*h];
+        byte[] data1 = new byte[w * h * ch];
+        byte[] data2 = new byte[w * h * ch];
+        float[] mdata = new float[w * h];
         blur_mask_f.get(0, 0, mdata);
         eyeImage.get(0, 0, data1);
 
         // 高斯权重混合
-        for(int row=0; row<h; row++) {
-            for(int col=0; col<w; col++) {
-                int r1 = data1[row*ch*w + col*ch]&0xff;
-                int g1 = data1[row*ch*w + col*ch+1]&0xff;
-                int b1 = data1[row*ch*w + col*ch+2]&0xff;
+        for (int row = 0; row < h; row++) {
+            for (int col = 0; col < w; col++) {
+                int r1 = data1[row * ch * w + col * ch] & 0xff;
+                int g1 = data1[row * ch * w + col * ch + 1] & 0xff;
+                int b1 = data1[row * ch * w + col * ch + 2] & 0xff;
 
-                int r2 = (data1[row*ch*w + col*ch]&0xff) + 50;
-                int g2 = (data1[row*ch*w + col*ch+1]&0xff) + 20;
-                int b2 = (data1[row*ch*w + col*ch+2]&0xff) + 10;
+                int r2 = (data1[row * ch * w + col * ch] & 0xff) + 50;
+                int g2 = (data1[row * ch * w + col * ch + 1] & 0xff) + 20;
+                int b2 = (data1[row * ch * w + col * ch + 2] & 0xff) + 10;
 
-                float w2 = mdata[row*w + col];
+                float w2 = mdata[row * w + col];
                 float w1 = 1.0f - w2;
 
-                r2 = (int)(r2*w2 + w1*r1);
-                g2 = (int)(g2*w2 + w1*g1);
-                b2 = (int)(b2*w2 + w1*b1);
+                r2 = (int) (r2 * w2 + w1 * r1);
+                g2 = (int) (g2 * w2 + w1 * g1);
+                b2 = (int) (b2 * w2 + w1 * b1);
 
                 r2 = r2 > 255 ? 255 : r2;
                 g2 = g2 > 255 ? 255 : g2;
                 b2 = b2 > 255 ? 255 : b2;
 
-                data2[row*ch*w + col*ch]=(byte)r2;
-                data2[row*ch*w + col*ch+1]=(byte)g2;
-                data2[row*ch*w + col*ch+2]=(byte)b2;
+                data2[row * ch * w + col * ch] = (byte) r2;
+                data2[row * ch * w + col * ch + 1] = (byte) g2;
+                data2[row * ch * w + col * ch + 2] = (byte) b2;
             }
         }
         eyeImage.put(0, 0, data2);
@@ -352,10 +355,11 @@ public class EyeRenderActivity extends AppCompatActivity implements CameraBridge
 
     /**
      * save images as debug info
+     *
      * @param image
      */
     private void saveDebugImage(Mat image) {
-        Bitmap bitmap = Bitmap.createBitmap(image.cols(),image.rows(), Bitmap.Config.ARGB_8888);
+        Bitmap bitmap = Bitmap.createBitmap(image.cols(), image.rows(), Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(image, bitmap);
         File filedir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "myOcrImages");
         String name = String.valueOf(System.currentTimeMillis()) + "_eye.jpg";
@@ -364,14 +368,13 @@ public class EyeRenderActivity extends AppCompatActivity implements CameraBridge
         try {
             output = new FileOutputStream(tempFile);
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, output);
-        }catch (IOException ioe) {
+        } catch (IOException ioe) {
             Log.i("DEBUGIMG", ioe.getMessage());
-        }finally {
+        } finally {
             try {
                 output.flush();
                 output.close();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 Log.i("CLOSEOUTPUT", e.getMessage());
             }
         }
@@ -379,12 +382,12 @@ public class EyeRenderActivity extends AppCompatActivity implements CameraBridge
 
     private Rect matchEyeTemplate(Mat src, Boolean left) {
         Mat tpl = left ? leftEye_template : rightEye_template;
-        if(tpl.cols() == 0 || tpl.rows() == 0) {
+        if (tpl.cols() == 0 || tpl.rows() == 0) {
             return null;
         }
         int height = src.rows() - tpl.rows() + 1;
         int width = src.cols() - tpl.cols() + 1;
-        if(height < 1 || width < 1) {
+        if (height < 1 || width < 1) {
             return null;
         }
         Mat result = new Mat(height, width, CvType.CV_32FC1);
@@ -397,8 +400,8 @@ public class EyeRenderActivity extends AppCompatActivity implements CameraBridge
 
         // ROI
         Rect rect = new Rect();
-        rect.x = (int)(maxloc.x);
-        rect.y = (int)(maxloc.y);
+        rect.x = (int) (maxloc.x);
+        rect.y = (int) (maxloc.y);
         rect.width = tpl.cols();
         rect.height = tpl.rows();
 

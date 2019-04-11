@@ -9,9 +9,13 @@ import android.graphics.Paint;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
@@ -31,8 +35,9 @@ import gloomyfish.opencvdemo.R;
 
 public class ReadMatinfoActivity extends AppCompatActivity implements View.OnClickListener {
     private int REQUEST_CAPTURE_IMAGE = 1;
-    private String TAG = "DEMO-OpenCV";
+    private String TAG = "ReadMatinfoActivity";
     private Uri fileUri;
+    private File tempFile;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,6 +47,7 @@ public class ReadMatinfoActivity extends AppCompatActivity implements View.OnCli
         Button getInfoBtn = (Button)this.findViewById(R.id.get_matInfo_btn);
         selectBtn.setOnClickListener(this);
         getInfoBtn.setOnClickListener(this);
+        tempFile = new File(getExternalFilesDir("img"), System.currentTimeMillis() + ".jpg");
     }
 
     @Override
@@ -52,11 +58,49 @@ public class ReadMatinfoActivity extends AppCompatActivity implements View.OnCli
                 pickUpImage();
                 break;
             case R.id.get_matInfo_btn:
-                bitmap2MatDemo();
+                getMatInfo();
                 break;
             default:
                 break;
         }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        switch (id) {
+            case R.id.bitmap2MatDemo:
+                bitmap2MatDemo();
+                break;
+            case R.id.mat2BitmapDemo:
+                mat2BitmapDemo();
+                break;
+            case R.id.basicDrawOnCanvas:
+                basicDrawOnCanvas();
+                break;
+            case R.id.basicDrawOnMat:
+                basicDrawOnMat();
+                break;
+            case R.id.getMatInfo:
+                getMatInfo();
+                break;
+            case R.id.getBitmapInfo:
+                getBitmapInfo();
+                break;
+            case R.id.scanPixelsDemo:
+                scanPixelsDemo();
+                break;
+            default:
+                bitmap2MatDemo();
+                break;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_matinfo, menu);
+        return true;
     }
 
     private void bitmap2MatDemo() {
@@ -71,9 +115,18 @@ public class ReadMatinfoActivity extends AppCompatActivity implements View.OnCli
         iv.setImageBitmap(bm);
     }
 
-    private void mat2BitmapDemo(int index) {
+    private void mat2BitmapDemo() {
         //将图像资源文件直接加载为Mat对象
-        Mat src = Imgcodecs.imread(fileUri.getPath());
+        Mat src = new Mat();
+        if (fileUri == null) {
+            Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.lena);
+            Utils.bitmapToMat(bitmap, src);
+        } else {
+            src = Imgcodecs.imread(fileUri.getPath());
+        }
+        if (src.empty()) {
+            return;
+        }
         int width = src.cols(); //宽
         int height = src.rows();    //高
         Bitmap bm = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
@@ -118,7 +171,7 @@ public class ReadMatinfoActivity extends AppCompatActivity implements View.OnCli
         // 显示结果
         ImageView iv = (ImageView)this.findViewById(R.id.matInfo_imageView);
         iv.setImageBitmap(bm);
-        bm.recycle();   //释放Bitmap对象的内存空间
+//        bm.recycle();   //释放Bitmap对象的内存空间
     }
 
     private void basicDrawOnMat() {
@@ -152,27 +205,42 @@ public class ReadMatinfoActivity extends AppCompatActivity implements View.OnCli
     }
 
     private void getMatInfo() {
-        //Mat src = Imgcodecs.imread(fileUri.getPath());
-        Mat src = Imgcodecs.imread(fileUri.getPath(), Imgcodecs.IMREAD_COLOR);
+        Mat src = new Mat();
+        if (fileUri == null) {
+            Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.lena);
+            Utils.bitmapToMat(bitmap, src);
+        } else {
+            src = Imgcodecs.imread(fileUri.getPath(), Imgcodecs.IMREAD_COLOR);
+        }
+        if (src.empty()) {
+            return;
+        }
         int width = src.cols(); //宽
         int height = src.rows();    //高
         int dims = src.dims();  //维度
         int channels = src.channels();  //通道数(ARGB,通常有1、3、4)
         int depth = src.depth();    //深度，表示每个通道灰度值所占大小，图像深度与类型密切相关
         int type = src.type();  //类型
-        // 1
+        String info = "\nwidth = " + width + "\nheight = " + height + "\ndims = " + dims + "\nchannels = " + channels + "\n" + "depth = " + depth + "\ntype = " + type;
+        Log.i(TAG, "\nwidth = " + width + "\nheight = " + height + "\ndims = " + dims + "\nchannels = " + channels + "\n" + "depth = " + depth + "\ntype = " + type);
+
+        drawText(info);
+
+        // 创建Mat对象
         Mat m1 = new Mat();
         //CV表示计算机视觉，8代表八进制，UC表示无符号char，3表示三通道
         m1.create(new Size(3, 3), CvType.CV_8UC3);
         Mat m2 = new Mat();
         m2.create(3, 3, CvType.CV_8UC3);
 
+        // 创建Mat对象
         //eye、zeros、ones为Matlab的三个函数
         Mat m3 = Mat.eye(3, 3,CvType.CV_8UC3);
         Mat m4 = Mat.eye(new Size(3, 3),CvType.CV_8UC3);
         Mat m5 = Mat.zeros(new Size(3, 3), CvType.CV_8UC3);
         Mat m6 = Mat.ones(new Size(3, 3), CvType.CV_8UC3);
 
+        // 创建Mat对象
         Mat m7 = new Mat(3, 3, CvType.CV_8UC3);
         m7.setTo(new Scalar(255, 255, 255));//Scalar为颜色向量，此时为白色
 
@@ -181,10 +249,30 @@ public class ReadMatinfoActivity extends AppCompatActivity implements View.OnCli
         image.setTo(new Scalar(127, 127, 127));
         ImageSelectUtils.saveImage(image);
 
+        // 创建Mat对象
         Mat m8 = new Mat(500, 500, CvType.CV_8UC3);
         m8.setTo(new Scalar(127, 127, 127));
         Mat result = new Mat();
         m8.copyTo(result);
+
+    }
+
+    private void drawText(String text) {
+        Bitmap bm = Bitmap.createBitmap(1000, 1000, Bitmap.Config.ARGB_8888);
+
+        // 创建画布与画笔风格
+        Canvas canvas = new Canvas(bm);
+        Paint p = new Paint();
+        p.setColor(Color.BLUE);
+        p.setStyle(Paint.Style.FILL_AND_STROKE);
+        p.setTextSize(24);
+
+
+        // 绘制文本
+        p.setColor(Color.RED);
+        canvas.drawText(text, 20, 20, p);
+        ImageView iv = (ImageView)this.findViewById(R.id.matInfo_imageView);
+        iv.setImageBitmap(bm);
     }
 
     public void getBitmapInfo() {
@@ -198,6 +286,7 @@ public class ReadMatinfoActivity extends AppCompatActivity implements View.OnCli
         //ARGB_565，表示每个通道分别占5位、6位、5位，总计两个字节，表示一个像素的图像
         Bitmap.Config config = bm.getConfig();
 
+        Bitmap dest = Bitmap.createBitmap(bm.getWidth(), bm.getHeight(), Bitmap.Config.ARGB_8888);
         int a=0, r=0, g=0, b=0;
         for(int row=0; row<height; row++) {
             for(int col=0; col<width; col++) {
@@ -212,12 +301,14 @@ public class ReadMatinfoActivity extends AppCompatActivity implements View.OnCli
                 g = 255 - g;
                 b = 255 - b;
                 // 保存到Bitmap中
-                bm.setPixel(col, row, Color.argb(a, r, g, b));
+                dest.setPixel(col, row, Color.argb(a, r, g, b));
             }
         }
 
-        int[] pixels = new int[width*height];
-        bm.getPixels(pixels, 0, width, 0, 0, width, height);
+        ImageView iv = (ImageView)this.findViewById(R.id.matInfo_imageView);
+        iv.setImageBitmap(dest);
+//        int[] pixels = new int[width*height];
+//        dest.getPixels(pixels, 0, width, 0, 0, width, height);
         
     }
 
@@ -249,20 +340,36 @@ public class ReadMatinfoActivity extends AppCompatActivity implements View.OnCli
         bm.setPixels(pixels, 0, width, 0, 0, width, height);
         ImageView iv = (ImageView)this.findViewById(R.id.matInfo_imageView);
         iv.setImageBitmap(bm);
-        bm.recycle();
+//        bm.recycle();
 
     }
 
     private void pickUpImage() {
-        Intent intent = new Intent();
-        intent.setType("image/*");
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(Intent.createChooser(intent, "图像选择..."), REQUEST_CAPTURE_IMAGE);
+        Intent selectIntent = new Intent(Intent.ACTION_PICK);
+        selectIntent.setType("image/*");
+        if (selectIntent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(selectIntent, REQUEST_CAPTURE_IMAGE);
+        }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode != RESULT_OK) {
+            setResult(RESULT_CANCELED);
+            finish();
+            return;
+        }
+        if (requestCode == REQUEST_CAPTURE_IMAGE) {
+            if (data != null && data.getData() != null) {
+                Uri uri = data.getData();
+                File f = new File(ImageSelectUtils.getRealPath(uri, getApplicationContext()));
+                fileUri = Uri.fromFile(f);
+            } else {
+                fileUri = Uri.fromFile(tempFile);
+            }
+        }
+
         if(requestCode == REQUEST_CAPTURE_IMAGE && resultCode == RESULT_OK) {
             if(data != null) {
                 Uri uri = data.getData();
@@ -270,10 +377,30 @@ public class ReadMatinfoActivity extends AppCompatActivity implements View.OnCli
                 fileUri = Uri.fromFile(f);
             }
         }
-        // display it
-        if(fileUri == null) return;
+
+        displaySelectedImage();
+    }
+
+    private void displaySelectedImage() {
+
+        if (fileUri == null) return;
+
         ImageView imageView = (ImageView)this.findViewById(R.id.matInfo_imageView);
-        Bitmap bm = BitmapFactory.decodeFile(fileUri.getPath());
-        imageView.setImageBitmap(bm);
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(fileUri.getPath(), options);
+        int w = options.outWidth;
+        int h = options.outHeight;
+        int inSample = 1;
+        if (w > 1000 || h > 1000) {
+            while (Math.max(w / inSample, h / inSample) > 1000) {
+                inSample *= 2;
+            }
+        }
+        options.inJustDecodeBounds = false;
+        options.inSampleSize = inSample;
+        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        Bitmap bitmap = BitmapFactory.decodeFile(fileUri.getPath());
+        imageView.setImageBitmap(bitmap);
     }
 }

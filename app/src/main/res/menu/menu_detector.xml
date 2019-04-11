@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/harrisCornerDemo"
+        android:title="Harris角点检测" />
+    <item android:id="@+id/shiTomasicornerDemo"
+        android:title="Shi-Tomasi角点检测" />
+    <item android:id="@+id/surfDemo"
+        android:title="surfDemo" />
+    <item android:id="@+id/siftDemo"
+        android:title="SIFT特征检测" />
+    <item android:id="@+id/detectorDemo"
+        android:title="特征检测" />
+    <item android:id="@+id/descriptorDemo"
+        android:title="descriptorDemo" />
+    <item android:id="@+id/findKnownObject"
+        android:title="findKnownObject" />
+    <item android:id="@+id/faceDetectionDemo"
+        android:title="faceDetectionDemo" />
+</menu>

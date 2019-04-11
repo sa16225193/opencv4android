@@ -1,6 +1,7 @@
 package com.book.chapter.eight;
 
 import android.graphics.Bitmap;
+import android.util.Log;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
@@ -22,6 +23,8 @@ import java.util.List;
  */
 
 public class CardNumberROIFinder {
+
+    public static final String TAG = "CardNumberROIFinder";
 
     public static Bitmap extractNumberROI(Bitmap input, Bitmap template) {
         Mat src = new Mat();
@@ -112,15 +115,16 @@ public class CardNumberROIFinder {
         }
         RotatedRect box = Imgproc.minAreaRect(new MatOfPoint2f(points.toArray(new Point[0])));
         double angle = box.angle;
+        Log.i(TAG, "angle = " + angle);
         if (angle < -45.)
             angle += 90.;
 
         Point[] vertices = new Point[4];
         box.points(vertices);
         // de-skew 偏斜校正
-        Mat rot_mat = Imgproc.getRotationMatrix2D(box.center, angle, 1);
+        Mat rot_mat = Imgproc.getRotationMatrix2D(box.center, box.angle, 1);
         Imgproc.warpAffine(binary, dst, rot_mat, binary.size(), Imgproc.INTER_CUBIC);
-        Core.bitwise_not(dst, dst);
+//        Core.bitwise_not(dst, dst);
 
         gray.release();
         binary.release();

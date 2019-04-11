@@ -7,6 +7,8 @@ import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -35,6 +37,7 @@ public class MatOperationsActivity extends AppCompatActivity implements View.OnC
     private int REQUEST_CAPTURE_IMAGE = 1;
     private String TAG = "DEMO-OpenCV";
     private Uri fileUri;
+    private File tempFile;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +47,48 @@ public class MatOperationsActivity extends AppCompatActivity implements View.OnC
         Button processBtn = (Button)this.findViewById(R.id.operation_btn);
         selectBtn.setOnClickListener(this);
         processBtn.setOnClickListener(this);
+
+        tempFile = new File(getExternalFilesDir("img"), System.currentTimeMillis() + ".jpg");
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_operation_mat, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        switch (id) {
+            case R.id.blendMat:
+                blendMat(1.5, 0.5);
+                break;
+            case R.id.meanAndDev:
+                meanAndDev();
+                break;
+            case R.id.normAndAbs:
+                normAndAbs();
+                break;
+            case R.id.logicOperator:
+                logicOperator();
+                break;
+            case R.id.adjustBrightAndContrast:
+                adjustBrightAndContrast(50, 1.0f);
+                break;
+            case R.id.matArithmeticDemo:
+                matArithmeticDemo();
+                break;
+            case R.id.channelsAndPixels:
+                channelsAndPixels();
+                break;
+            case R.id.readAndWritePixels:
+                readAndWritePixels();
+            default:
+                blendMat(1.5, 0.5);
+                break;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     /**
@@ -53,8 +98,14 @@ public class MatOperationsActivity extends AppCompatActivity implements View.OnC
      */
     public void blendMat(double alpha, double gamma) {
         // 加载图像
-        Mat src = Imgcodecs.imread(fileUri.getPath());
-        if(src.empty()){
+        Mat src = new Mat();
+        if (fileUri == null) {
+            Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.lena);
+            Utils.bitmapToMat(bitmap, src);
+        } else {
+            src = Imgcodecs.imread(fileUri.getPath());
+        }
+        if (src.empty()) {
             return;
         }
 
@@ -82,8 +133,14 @@ public class MatOperationsActivity extends AppCompatActivity implements View.OnC
      */
     public void meanAndDev() {
         // 加载图像
-        Mat src = Imgcodecs.imread(fileUri.getPath());
-        if(src.empty()){
+        Mat src = new Mat();
+        if (fileUri == null) {
+            Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.lena);
+            Utils.bitmapToMat(bitmap, src);
+        } else {
+            src = Imgcodecs.imread(fileUri.getPath());
+        }
+        if (src.empty()) {
             return;
         }
         // 转为灰度图像
@@ -139,7 +196,7 @@ public class MatOperationsActivity extends AppCompatActivity implements View.OnC
                 pickUpImage();
                 break;
             case R.id.operation_btn:
-                normAndAbs();
+                blendMat(1.5, 0.5);
                 break;
             default:
                 break;
@@ -245,8 +302,14 @@ public class MatOperationsActivity extends AppCompatActivity implements View.OnC
      */
     public void adjustBrightAndContrast(int b, float c) {
         // 输入图像src1
-        Mat src = Imgcodecs.imread(fileUri.getPath());
-        if(src.empty()){
+        Mat src = new Mat();
+        if (fileUri == null) {
+            Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.lena);
+            Utils.bitmapToMat(bitmap, src);
+        } else {
+            src = Imgcodecs.imread(fileUri.getPath());
+        }
+        if (src.empty()) {
             return;
         }
 
@@ -255,13 +318,13 @@ public class MatOperationsActivity extends AppCompatActivity implements View.OnC
         Core.add(src, new Scalar(b, b, b), dst1);
 
         // 调整对比度
-        Mat dst2 = new Mat();
-        Core.multiply(dst1, new Scalar(c, c, c), dst2);
+//        Mat dst2 = new Mat();
+//        Core.multiply(dst1, new Scalar(c, c, c), dst2);
 
         // 转换为Bitmap，显示
         Bitmap bm = Bitmap.createBitmap(src.cols(), src.rows(), Bitmap.Config.ARGB_8888);
         Mat result = new Mat();
-        Imgproc.cvtColor(dst2, result, Imgproc.COLOR_BGR2RGBA);
+        Imgproc.cvtColor(dst1, result, Imgproc.COLOR_BGR2RGBA);
         Utils.matToBitmap(result, bm);
 
         // show
@@ -271,8 +334,14 @@ public class MatOperationsActivity extends AppCompatActivity implements View.OnC
 
     public void matArithmeticDemo() {
         // 输入图像src1
-        Mat src = Imgcodecs.imread(fileUri.getPath());
-        if(src.empty()){
+        Mat src = new Mat();
+        if (fileUri == null) {
+            Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.lena);
+            Utils.bitmapToMat(bitmap, src);
+        } else {
+            src = Imgcodecs.imread(fileUri.getPath());
+        }
+        if (src.empty()) {
             return;
         }
         // 输入图像src2
@@ -297,8 +366,14 @@ public class MatOperationsActivity extends AppCompatActivity implements View.OnC
      * 通道分离与合并
      */
     public void channelsAndPixels() {
-        Mat src = Imgcodecs.imread(fileUri.getPath());
-        if(src.empty()){
+        Mat src = new Mat();
+        if (fileUri == null) {
+            Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.lena);
+            Utils.bitmapToMat(bitmap, src);
+        } else {
+            src = Imgcodecs.imread(fileUri.getPath());
+        }
+        if (src.empty()) {
             return;
         }
 
@@ -334,8 +409,14 @@ public class MatOperationsActivity extends AppCompatActivity implements View.OnC
      * 读取并修改像素
      */
     public void readAndWritePixels() {
-        Mat src = Imgcodecs.imread(fileUri.getPath());
-        if(src.empty()){
+        Mat src = new Mat();
+        if (fileUri == null) {
+            Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.lena);
+            Utils.bitmapToMat(bitmap, src);
+        } else {
+            src = Imgcodecs.imread(fileUri.getPath());
+        }
+        if (src.empty()) {
             return;
         }
         int channels = src.channels();
@@ -381,26 +462,54 @@ public class MatOperationsActivity extends AppCompatActivity implements View.OnC
     }
 
     private void pickUpImage() {
-        Intent intent = new Intent();
-        intent.setType("image/*");
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(Intent.createChooser(intent, "图像选择..."), REQUEST_CAPTURE_IMAGE);
+        Intent selectIntent = new Intent(Intent.ACTION_PICK);
+        selectIntent.setType("image/*");
+        if (selectIntent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(selectIntent, REQUEST_CAPTURE_IMAGE);
+        }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode == REQUEST_CAPTURE_IMAGE && resultCode == RESULT_OK) {
-            if(data != null) {
+        if (resultCode != RESULT_OK) {
+            setResult(RESULT_CANCELED);
+            finish();
+            return;
+        }
+        if (requestCode == REQUEST_CAPTURE_IMAGE) {
+            if (data != null && data.getData() != null) {
                 Uri uri = data.getData();
                 File f = new File(ImageSelectUtils.getRealPath(uri, getApplicationContext()));
                 fileUri = Uri.fromFile(f);
+            } else {
+                fileUri = Uri.fromFile(tempFile);
             }
         }
-        // display it
-        if(fileUri == null) return;
+
+        displaySelectedImage();
+    }
+
+    private void displaySelectedImage() {
+
+        if (fileUri == null) return;
+
         ImageView imageView = (ImageView)this.findViewById(R.id.chapter3_imageView);
-        Bitmap bm = BitmapFactory.decodeFile(fileUri.getPath());
-        imageView.setImageBitmap(bm);
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(fileUri.getPath(), options);
+        int w = options.outWidth;
+        int h = options.outHeight;
+        int inSample = 1;
+        if (w > 1000 || h > 1000) {
+            while (Math.max(w / inSample, h / inSample) > 1000) {
+                inSample *= 2;
+            }
+        }
+        options.inJustDecodeBounds = false;
+        options.inSampleSize = inSample;
+        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        Bitmap bitmap = BitmapFactory.decodeFile(fileUri.getPath());
+        imageView.setImageBitmap(bitmap);
     }
 }

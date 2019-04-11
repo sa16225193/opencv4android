@@ -8,6 +8,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -54,6 +56,8 @@ public class Feature2dMainActivity extends AppCompatActivity implements View.OnC
     private String TAG = "DEMO-OpenCV";
     private CascadeClassifier faceDetector;
     private Uri fileUri;
+    private File tempFile;
+    private int option;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,6 +72,7 @@ public class Feature2dMainActivity extends AppCompatActivity implements View.OnC
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
+        tempFile = new File(getExternalFilesDir("img"), System.currentTimeMillis() + ".jpg");
     }
 
     @Override
@@ -83,6 +88,48 @@ public class Feature2dMainActivity extends AppCompatActivity implements View.OnC
             default:
                 break;
         }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        switch (id) {
+            case R.id.harrisCornerDemo:
+                option = 0;
+                break;
+            case R.id.shiTomasicornerDemo:
+                option = 1;
+                break;
+            case R.id.surfDemo:
+                option = 2;
+                break;
+            case R.id.siftDemo:
+                option = 3;
+                break;
+            case R.id.detectorDemo:
+                option = 4;
+                break;
+            case R.id.descriptorDemo:
+                option = 5;
+                break;
+            case R.id.findKnownObject:
+                option = 6;
+                break;
+            case R.id.faceDetectionDemo:
+                option = 7;
+                break;
+            default:
+                option = 0;
+                break;
+        }
+        extractFeatureImage(7);
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_detector, menu);
+        return true;
     }
 
     private void initFaceDetector() throws IOException {
@@ -103,8 +150,14 @@ public class Feature2dMainActivity extends AppCompatActivity implements View.OnC
     }
 
     private void extractFeatureImage(int section) {
-        Mat src = Imgcodecs.imread(fileUri.getPath());
-        if(src.empty()){
+        Mat src = new Mat();
+        if (fileUri == null) {
+            Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.lena);
+            Utils.bitmapToMat(bitmap, src);
+        } else {
+            src = Imgcodecs.imread(fileUri.getPath());
+        }
+        if (src.empty()) {
             return;
         }
         Mat dst = new Mat();
@@ -450,26 +503,54 @@ public class Feature2dMainActivity extends AppCompatActivity implements View.OnC
     }
 
     private void pickUpImage() {
-        Intent intent = new Intent();
-        intent.setType("image/*");
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(Intent.createChooser(intent, "图像选择..."), REQUEST_CAPTURE_IMAGE);
+        Intent selectIntent = new Intent(Intent.ACTION_PICK);
+        selectIntent.setType("image/*");
+        if (selectIntent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(selectIntent, REQUEST_CAPTURE_IMAGE);
+        }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode == REQUEST_CAPTURE_IMAGE && resultCode == RESULT_OK) {
-            if(data != null) {
+        if (resultCode != RESULT_OK) {
+            setResult(RESULT_CANCELED);
+            finish();
+            return;
+        }
+        if (requestCode == REQUEST_CAPTURE_IMAGE) {
+            if (data != null && data.getData() != null) {
                 Uri uri = data.getData();
                 File f = new File(ImageSelectUtils.getRealPath(uri, getApplicationContext()));
                 fileUri = Uri.fromFile(f);
+            } else {
+                fileUri = Uri.fromFile(tempFile);
             }
         }
-        // display it
-        if(fileUri == null) return;
-        ImageView imageView = (ImageView)this.findViewById(R.id.chapter6_imageView);
-        Bitmap bm = BitmapFactory.decodeFile(fileUri.getPath());
-        imageView.setImageBitmap(bm);
+
+        displaySelectedImage();
+    }
+
+    private void displaySelectedImage() {
+
+        if (fileUri == null) return;
+
+        ImageView imageView = (ImageView) this.findViewById(R.id.chapter6_imageView);
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(fileUri.getPath(), options);
+        int w = options.outWidth;
+        int h = options.outHeight;
+        int inSample = 1;
+        if (w > 1000 || h > 1000) {
+            while (Math.max(w / inSample, h / inSample) > 1000) {
+                inSample *= 2;
+            }
+        }
+        options.inJustDecodeBounds = false;
+        options.inSampleSize = inSample;
+        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        Bitmap bitmap = BitmapFactory.decodeFile(fileUri.getPath());
+        imageView.setImageBitmap(bitmap);
     }
 }

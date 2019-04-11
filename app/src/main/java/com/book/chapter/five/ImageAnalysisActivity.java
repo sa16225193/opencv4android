@@ -7,6 +7,8 @@ import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CalendarView;
@@ -40,6 +42,9 @@ public class ImageAnalysisActivity extends AppCompatActivity implements View.OnC
     private int REQUEST_CAPTURE_IMAGE = 1;
     private String TAG = "DEMO-OpenCV";
     private Uri fileUri;
+    private File tempFile;
+    private ImageView ivSample;
+    private int option;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +54,7 @@ public class ImageAnalysisActivity extends AppCompatActivity implements View.OnC
         Button processBtn = (Button)this.findViewById(R.id.analysis_measure_btn);
         selectBtn.setOnClickListener(this);
         processBtn.setOnClickListener(this);
+        tempFile = new File(getExternalFilesDir("img"), System.currentTimeMillis() + ".jpg");
 
     }
 
@@ -60,17 +66,83 @@ public class ImageAnalysisActivity extends AppCompatActivity implements View.OnC
                 pickUpImage();
                 break;
             case R.id.analysis_measure_btn:
-                analysisImage(13);
+                analysisImage(7);
                 break;
             default:
                 break;
         }
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_analysis, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        switch (id) {
+            case R.id.sobelDemo:
+                option = 0;
+                break;
+            case R.id.scharrDemo:
+                option = 1;
+                break;
+            case R.id.laplianDemo:
+                option = 2;
+                break;
+            case R.id.edgeDemo:
+                option = 3;
+                break;
+            case R.id.houghLinePDemo:
+                option = 4;
+                break;
+            case R.id.houghLinesDemo:
+                option = 5;
+                break;
+            case R.id.houghCircleDemo:
+                option = 6;
+                break;
+            case R.id.findContoursDemo:
+                option = 7;
+                break;
+            case R.id.measureContours:
+                option = 8;
+                break;
+            case R.id.displayHistogram:
+                option = 9;
+                break;
+            case R.id.equalizeHistogram:
+                option = 10;
+                break;
+            case R.id.compareHistogram:
+                option = 11;
+                break;
+            case R.id.backProjectionHistogram:
+                option = 12;
+                break;
+            case R.id.matchTemplateDemo:
+                option = 13;
+                break;
+            default:
+                option = 0;
+                break;
+        }
+        analysisImage(option);
+        return super.onOptionsItemSelected(item);
+    }
+
     private void analysisImage(int section) {
         // read image
-        Mat src = Imgcodecs.imread(fileUri.getPath());
-        if(src.empty()){
+        Mat src = new Mat();
+        if (fileUri == null) {
+            Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.contours);
+            Utils.bitmapToMat(bitmap, src);
+        } else {
+            src = Imgcodecs.imread(fileUri.getPath());
+        }
+        if (src.empty()) {
             return;
         }
         Mat dst = new Mat();
@@ -83,7 +155,7 @@ public class ImageAnalysisActivity extends AppCompatActivity implements View.OnC
         } else if(section == 2) {
             laplianDemo(src,dst);
         } else if(section == 3) {
-            edge2Demo(src, dst);
+            edgeDemo(src, dst);
         } else if(section == 4) {
             houghLinePDemo(src, dst);
         } else if(section == 5) {
@@ -343,9 +415,13 @@ public class ImageAnalysisActivity extends AppCompatActivity implements View.OnC
         Mat gray= new Mat();
         Mat binary = new Mat();
 
-        // 二值
         Imgproc.cvtColor(src, gray, Imgproc.COLOR_BGR2GRAY);
-        Imgproc.threshold(gray, binary, 0, 255, Imgproc.THRESH_BINARY | Imgproc.THRESH_OTSU);
+        // 二值
+//        Imgproc.threshold(gray, binary, 0, 255, Imgproc.THRESH_BINARY | Imgproc.THRESH_OTSU);
+
+        //Canny
+//        Imgproc.GaussianBlur(src, src, new Size(3, 3), 0);
+        Imgproc.Canny(src, binary, 50, 150, 3, true);
 
         // 轮廓发现
         List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
@@ -414,7 +490,10 @@ public class ImageAnalysisActivity extends AppCompatActivity implements View.OnC
                     new Scalar(0, 0, 255), 2, 8, 0);
         }
         out.copyTo(dst);
-
+        ImageView imageView = (ImageView)this.findViewById(R.id.chapter5_imageView);
+        Bitmap bm = Bitmap.createBitmap(src.cols(), src.rows(), Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(dst, bm);
+        imageView.setImageBitmap(bm);
         // 释放内存
         out.release();
         edges.release();
@@ -447,6 +526,10 @@ public class ImageAnalysisActivity extends AppCompatActivity implements View.OnC
             Imgproc.line(out, pt1, pt2, new Scalar(0,0,255), 3, Imgproc.LINE_AA, 0);
         }
         out.copyTo(dst);
+        ImageView imageView = (ImageView)this.findViewById(R.id.chapter5_imageView);
+        Bitmap bm = Bitmap.createBitmap(src.cols(), src.rows(), Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(dst, bm);
+        imageView.setImageBitmap(bm);
         out.release();
         edges.release();
     }
@@ -496,6 +579,10 @@ public class ImageAnalysisActivity extends AppCompatActivity implements View.OnC
         Imgproc.Canny(gradx, grady, edges, 50, 150);
         Core.bitwise_and(src, src, dst, edges);
 
+        ImageView imageView = (ImageView)this.findViewById(R.id.chapter5_imageView);
+        Bitmap bm = Bitmap.createBitmap(src.cols(), src.rows(), Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(dst, bm);
+        imageView.setImageBitmap(bm);
         // 释放内存
         edges.release();
         gradx.release();
@@ -521,6 +608,7 @@ public class ImageAnalysisActivity extends AppCompatActivity implements View.OnC
         Log.i("OpenCV", "YGradient....");
 
         Core.addWeighted(gradx,0.5, grady, 0.5, 0, dst);
+
         gradx.release();
         grady.release();
         Log.i("OpenCV", "Gradient.....");
@@ -557,26 +645,55 @@ public class ImageAnalysisActivity extends AppCompatActivity implements View.OnC
     }
 
     private void pickUpImage() {
-        Intent intent = new Intent();
-        intent.setType("image/*");
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(Intent.createChooser(intent, "图像选择..."), REQUEST_CAPTURE_IMAGE);
+        Intent selectIntent = new Intent(Intent.ACTION_PICK);
+        selectIntent.setType("image/*");
+        if (selectIntent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(selectIntent, REQUEST_CAPTURE_IMAGE);
+        }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode == REQUEST_CAPTURE_IMAGE && resultCode == RESULT_OK) {
-            if(data != null) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode != RESULT_OK) {
+            setResult(RESULT_CANCELED);
+            finish();
+            return;
+        }
+        if (requestCode == REQUEST_CAPTURE_IMAGE) {
+            if (data != null && data.getData() != null) {
                 Uri uri = data.getData();
                 File f = new File(ImageSelectUtils.getRealPath(uri, getApplicationContext()));
                 fileUri = Uri.fromFile(f);
+            } else {
+                fileUri = Uri.fromFile(tempFile);
             }
         }
-        // display it
-        if(fileUri == null) return;
+
+        displaySelectedImage();
+    }
+
+    private void displaySelectedImage() {
+
+        if (fileUri == null) return;
+
         ImageView imageView = (ImageView)this.findViewById(R.id.chapter5_imageView);
-        Bitmap bm = BitmapFactory.decodeFile(fileUri.getPath());
-        imageView.setImageBitmap(bm);
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(fileUri.getPath(), options);
+        int w = options.outWidth;
+        int h = options.outHeight;
+        int inSample = 1;
+        if (w > 1000 || h > 1000) {
+            while (Math.max(w / inSample, h / inSample) > 1000) {
+                inSample *= 2;
+            }
+        }
+        options.inJustDecodeBounds = false;
+        options.inSampleSize = inSample;
+        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        Bitmap bitmap = BitmapFactory.decodeFile(fileUri.getPath());
+        imageView.setImageBitmap(bitmap);
     }
 }

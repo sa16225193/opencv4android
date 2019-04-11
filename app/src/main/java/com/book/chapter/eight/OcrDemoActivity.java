@@ -35,16 +35,20 @@ public class OcrDemoActivity extends AppCompatActivity implements View.OnClickLi
     private int option;
     private Uri fileUri;
     private TessBaseAPI baseApi;
+    private File tempFile;
+    private ImageView ivPhoto;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_ocr_demo);
         Button selectBtn = (Button)this.findViewById(R.id.select_image_btn);
         Button ocrRecogBtn = (Button)this.findViewById(R.id.ocr_recognize_btn);
+        ivPhoto = findViewById(R.id.chapter8_imageView);
         selectBtn.setOnClickListener(this);
         ocrRecogBtn.setOnClickListener(this);
         option = getIntent().getIntExtra("TYPE", 0);
-
+        tempFile = new File(getExternalFilesDir("img"), System.currentTimeMillis() + ".jpg");
         try {
             initTessBaseAPI();
         } catch (IOException ioe) {
@@ -53,12 +57,15 @@ public class OcrDemoActivity extends AppCompatActivity implements View.OnClickLi
 
         if(option == 2) {
             this.setTitle("身份证号码识别演示");
+            ivPhoto.setImageResource(R.drawable.mockid);
         } else if(option == 3) {
             this.setTitle("偏斜校正演示");
             ocrRecogBtn.setText("校正");
+            ivPhoto.setImageResource(R.drawable.jiaozheng);
         }
         else {
             this.setTitle("Tesseract OCR文本识别演示");
+            ivPhoto.setImageResource(R.drawable.sample_text);
         }
     }
 
@@ -84,8 +91,9 @@ public class OcrDemoActivity extends AppCompatActivity implements View.OnClickLi
     }
 
     private void deSkewTextImage() {
-        Mat src = Imgcodecs.imread(fileUri.getPath());
-        if(src.empty()){
+        Mat src = new Mat();
+        src = initMat(src);
+        if (src.empty()) {
             return;
         }
         Mat dst = new Mat();
@@ -96,12 +104,37 @@ public class OcrDemoActivity extends AppCompatActivity implements View.OnClickLi
         Utils.matToBitmap(dst, bm);
 
         // show
-        ImageView iv = this.findViewById(R.id.chapter8_imageView);
-        iv.setImageBitmap(bm);
+        ivPhoto.setImageBitmap(bm);
 
         // 释放内存
         dst.release();
         src.release();
+    }
+
+    private Mat initMat(Mat src) {
+        if (fileUri == null) {
+            Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.jiaozheng);
+            Utils.bitmapToMat(bitmap, src);
+        } else {
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inJustDecodeBounds = true;
+            BitmapFactory.decodeFile(fileUri.getPath(), options);
+            int w = options.outWidth;
+            int h = options.outHeight;
+            int inSample = 1;
+            if (w > 2000 || h > 2000) {
+                while (Math.max(w / inSample, h / inSample) > 1000) {
+                    inSample *= 2;
+                }
+            }
+            options.inJustDecodeBounds = false;
+            options.inSampleSize = inSample;
+            options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+            Bitmap bitmap = BitmapFactory.decodeFile(fileUri.getPath(), options);
+//            src = Imgcodecs.imread(fileUri.getPath());
+            Utils.bitmapToMat(bitmap, src);
+        }
+        return src;
     }
 
 
@@ -131,20 +164,27 @@ public class OcrDemoActivity extends AppCompatActivity implements View.OnClickLi
     }
 
     private void recognizeCardId() {
-        Bitmap template = BitmapFactory.decodeResource(this.getResources(), R.drawable.card_template);
-        Bitmap cardImage = BitmapFactory.decodeFile(fileUri.getPath());
+        Bitmap template = BitmapFactory.decodeResource(getResources(), R.drawable.card_template);
+        Bitmap cardImage;
+        if (fileUri == null) {
+            cardImage = BitmapFactory.decodeResource(getResources(), R.drawable.mockid);
+        } else {
+            cardImage = BitmapFactory.decodeFile(fileUri.getPath());
+        }
         Bitmap temp = CardNumberROIFinder.extractNumberROI(cardImage.copy(Bitmap.Config.ARGB_8888, true), template);
         baseApi.setImage(temp);
         String myIdNumber = baseApi.getUTF8Text();
         TextView txtView = findViewById(R.id.text_result_id);
         txtView.setText("身份证号码为:" + myIdNumber);
-        ImageView imageView = findViewById(R.id.chapter8_imageView);
-        imageView.setImageBitmap(temp);
     }
 
     private void recognizeTextImage() {
-        if(fileUri == null) return;
-        Bitmap bmp = BitmapFactory.decodeFile(fileUri.getPath());
+        Bitmap bmp;
+        if (fileUri == null) {
+            bmp = BitmapFactory.decodeResource(getResources(), R.drawable.sample_text);
+        } else {
+            bmp = BitmapFactory.decodeFile(fileUri.getPath());
+        }
         baseApi.setImage(bmp);
         String recognizedText = baseApi.getUTF8Text();
         TextView txtView = findViewById(R.id.text_result_id);
@@ -154,44 +194,53 @@ public class OcrDemoActivity extends AppCompatActivity implements View.OnClickLi
     }
 
     private void pickUpImage() {
-        Intent intent = new Intent();
-        intent.setType("image/*");
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(Intent.createChooser(intent, "图像选择..."), REQUEST_CAPTURE_IMAGE);
+        Intent selectIntent = new Intent(Intent.ACTION_PICK);
+        selectIntent.setType("image/*");
+        if (selectIntent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(selectIntent, REQUEST_CAPTURE_IMAGE);
+        }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode == REQUEST_CAPTURE_IMAGE && resultCode == RESULT_OK) {
-            if(data != null) {
+        if (resultCode != RESULT_OK) {
+            setResult(RESULT_CANCELED);
+            finish();
+            return;
+        }
+        if (requestCode == REQUEST_CAPTURE_IMAGE) {
+            if (data != null && data.getData() != null) {
                 Uri uri = data.getData();
                 File f = new File(ImageSelectUtils.getRealPath(uri, getApplicationContext()));
                 fileUri = Uri.fromFile(f);
+            } else {
+                fileUri = Uri.fromFile(tempFile);
             }
         }
-        // display it
+
         displaySelectedImage();
     }
 
     private void displaySelectedImage() {
-        if(fileUri == null) return;
-        ImageView imageView = (ImageView)this.findViewById(R.id.chapter8_imageView);
+
+        if (fileUri == null) return;
+
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
         BitmapFactory.decodeFile(fileUri.getPath(), options);
         int w = options.outWidth;
         int h = options.outHeight;
         int inSample = 1;
-        if(w > 1000 || h > 1000) {
-            while(Math.max(w/inSample, h/inSample) > 1000) {
-                inSample *=2;
+        if (w > 1000 || h > 1000) {
+            while (Math.max(w / inSample, h / inSample) > 1000) {
+                inSample *= 2;
             }
         }
         options.inJustDecodeBounds = false;
         options.inSampleSize = inSample;
         options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-        Bitmap bm = BitmapFactory.decodeFile(fileUri.getPath(), options);
-        imageView.setImageBitmap(bm);
+        Bitmap bitmap = BitmapFactory.decodeFile(fileUri.getPath());
+        ivPhoto.setImageBitmap(bitmap);
     }
 }

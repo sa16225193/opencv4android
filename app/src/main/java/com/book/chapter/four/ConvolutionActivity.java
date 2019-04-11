@@ -6,6 +6,8 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -26,8 +28,10 @@ import gloomyfish.opencvdemo.R;
 
 public class ConvolutionActivity extends AppCompatActivity implements View.OnClickListener {
     private int REQUEST_CAPTURE_IMAGE = 1;
-    private String TAG = "DEMO-OpenCV";
+    private String TAG = "ConvolutionActivity";
     private Uri fileUri;
+    private File tempFile;
+    private int option;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +41,7 @@ public class ConvolutionActivity extends AppCompatActivity implements View.OnCli
         Button processBtn = (Button)this.findViewById(R.id.convolution_btn);
         selectBtn.setOnClickListener(this);
         processBtn.setOnClickListener(this);
+        tempFile = new File(getExternalFilesDir("img"), System.currentTimeMillis() + ".jpg");
     }
 
     @Override
@@ -54,37 +59,93 @@ public class ConvolutionActivity extends AppCompatActivity implements View.OnCli
         }
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        switch (id) {
+            case R.id.blur:
+                option = 0;
+                break;
+            case R.id.GaussianBlur:
+                option = 1;
+                break;
+            case R.id.medianBlur:
+                option = 2;
+                break;
+            case R.id.dilate:
+                option = 3;
+                break;
+            case R.id.erode:
+                option = 4;
+                break;
+            case R.id.bilateralFilter:
+                option = 5;
+                break;
+            case R.id.pyrMeanShiftFiltering:
+                option = 6;
+                break;
+            case R.id.customFilter:
+                option = 7;
+                break;
+            case R.id.morphologyDemo:
+                option = 8;
+                break;
+            case R.id.thresholdDemo:
+                option = 9;
+                break;
+            case R.id.adpThresholdDemo:
+                option = 10;
+                break;
+            default:
+                option = 0;
+                break;
+        }
+        blurImage(option);
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_image_operation, menu);
+        return true;
+    }
+
     private void blurImage(int type) {
         // read image
-        Mat src = Imgcodecs.imread(fileUri.getPath());
-        if(src.empty()){
+        Mat src = new Mat();
+        if (fileUri == null) {
+            Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.lena);
+            Utils.bitmapToMat(bitmap, src);
+        } else {
+            src = Imgcodecs.imread(fileUri.getPath());
+        }
+        if (src.empty()) {
             return;
         }
-        Mat dst = new Mat();
-
-        if(type == 0) {
+        Mat dst = new Mat(src.rows(), src.cols(), CvType.CV_8UC3);
+        if(type == 0) {//均值模糊
             Imgproc.blur(src, dst, new Size(5, 5), new Point(-1, -1), Core.BORDER_DEFAULT);
-        } else if(type == 1) {
+        } else if(type == 1) {//高斯模糊
             Imgproc.GaussianBlur(src, dst, new Size(0, 0), 15);
-        }else if(type == 2) {
+        }else if(type == 2) {//中值模糊
             Imgproc.medianBlur(src, dst, 5);
-        } else if(type == 3) {
+        } else if(type == 3) {//膨胀（最大值模糊）
             Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3));
             Imgproc.dilate(src, dst, kernel);
-        }else if(type == 4) {
+        }else if(type == 4) {//腐蚀(最小值模糊)
             Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3));
             Imgproc.erode(src, dst, kernel);
-        }else if(type == 5) {
+        }else if(type == 5) {//高斯双边滤波
             Imgproc.bilateralFilter(src, dst, 0, 150, 15);
-        }else if(type == 6) {
+        }else if(type == 6) {//均值迁移滤波
             Imgproc.pyrMeanShiftFiltering(src, dst, 10, 50);
-        } else if(type == 7) {
+        } else if(type == 7) {//自定义滤波
             customFilter(src, dst, 0);
-        } else if(type == 8) {
+        } else if(type == 8) {//形态学操作
             morphologyDemo(src, dst, 0);
-        } else if(type == 9) {
+        } else if(type == 9) {//阈值化与阈值
             thresholdDemo(src, dst);
-        }else if(type == 10) {
+        }else if(type == 10) {//自适应阈值
             adpThresholdDemo(src, dst);
         }
 
@@ -225,26 +286,55 @@ public class ConvolutionActivity extends AppCompatActivity implements View.OnCli
     }
 
     private void pickUpImage() {
-        Intent intent = new Intent();
-        intent.setType("image/*");
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(Intent.createChooser(intent, "图像选择..."), REQUEST_CAPTURE_IMAGE);
+        Intent selectIntent = new Intent(Intent.ACTION_PICK);
+        selectIntent.setType("image/*");
+        if (selectIntent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(selectIntent, REQUEST_CAPTURE_IMAGE);
+        }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode == REQUEST_CAPTURE_IMAGE && resultCode == RESULT_OK) {
-            if(data != null) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode != RESULT_OK) {
+            setResult(RESULT_CANCELED);
+            finish();
+            return;
+        }
+        if (requestCode == REQUEST_CAPTURE_IMAGE) {
+            if (data != null && data.getData() != null) {
                 Uri uri = data.getData();
                 File f = new File(ImageSelectUtils.getRealPath(uri, getApplicationContext()));
                 fileUri = Uri.fromFile(f);
+            } else {
+                fileUri = Uri.fromFile(tempFile);
             }
         }
-        // display it
-        if(fileUri == null) return;
-        ImageView imageView = (ImageView)this.findViewById(R.id.chapter4_imageView);
-        Bitmap bm = BitmapFactory.decodeFile(fileUri.getPath());
-        imageView.setImageBitmap(bm);
+
+        displaySelectedImage();
+    }
+
+    private void displaySelectedImage() {
+
+        if (fileUri == null) return;
+
+        ImageView imageView = (ImageView) this.findViewById(R.id.chapter4_imageView);
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(fileUri.getPath(), options);
+        int w = options.outWidth;
+        int h = options.outHeight;
+        int inSample = 1;
+        if (w > 1000 || h > 1000) {
+            while (Math.max(w / inSample, h / inSample) > 1000) {
+                inSample *= 2;
+            }
+        }
+        options.inJustDecodeBounds = false;
+        options.inSampleSize = inSample;
+        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+        Bitmap bitmap = BitmapFactory.decodeFile(fileUri.getPath());
+        imageView.setImageBitmap(bitmap);
     }
 }

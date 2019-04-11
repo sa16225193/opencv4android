@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/blendMat"
+        android:title="调整亮度与对比度" />
+    <item android:id="@+id/meanAndDev"
+        android:title="根据均值进行二值分割" />
+    <item android:id="@+id/normAndAbs"
+        android:title="归一化" />
+    <item android:id="@+id/logicOperator"
+        android:title="Mat的逻辑操作" />
+    <item android:id="@+id/adjustBrightAndContrast"
+        android:title="调整亮度与对比度" />
+    <item android:id="@+id/matArithmeticDemo"
+        android:title="Mat加法运算" />
+    <item android:id="@+id/channelsAndPixels"
+        android:title="通道分离与合并" />
+    <item android:id="@+id/readAndWritePixels"
+        android:title="读取并修改像素" />
+</menu>
