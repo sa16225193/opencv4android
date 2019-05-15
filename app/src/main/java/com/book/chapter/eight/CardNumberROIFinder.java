@@ -12,6 +12,7 @@ import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.RotatedRect;
+import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
@@ -42,15 +43,23 @@ public class CardNumberROIFinder {
         Imgproc.cvtColor(dst, dst, Imgproc.COLOR_GRAY2BGR);
         int width = input.getWidth();
         int height = input.getHeight();
+        Log.i(TAG, "\norigin width = " + width + ", height = " + height);
         Rect roiArea = null;
-        for(int i=0; i<contours.size(); i++) {
+        Log.i(TAG, "\n contours :");
+        int maxArea = width * height / 4;
+        for (int i = 0; i < contours.size(); i++) {
             List<Point> points = contours.get(i).toList();
             Rect rect = Imgproc.boundingRect(contours.get(i));
-            if(rect.width < width && rect.width > (width / 2)) {
-                if(rect.height <= (height / 4)) continue;
+            Log.i(TAG, "contour " + i + " : width = " + rect.width + ", height = " + rect.height);
+            if (rect.width * rect.height > maxArea) {
+                maxArea = rect.width * rect.height;
                 roiArea = rect;
             }
         }
+        if (roiArea == null) {
+            return input;
+        }
+        Log.i(TAG, "\nroiArea : width = " + roiArea.width + ", height = " + roiArea.height);
         // clip ROI Area
         Mat result = src.submat(roiArea);
 
@@ -60,7 +69,7 @@ public class CardNumberROIFinder {
         result = fixSrc;
 
         // detect location
-        int result_cols =  result.cols() - tpl.cols() + 1;
+        int result_cols = result.cols() - tpl.cols() + 1;
         int result_rows = result.rows() - tpl.rows() + 1;
         Mat mr = new Mat(result_rows, result_cols, CvType.CV_32FC1);
 
@@ -72,7 +81,14 @@ public class CardNumberROIFinder {
         Bitmap.Config conf = Bitmap.Config.ARGB_8888; // see other conf types
 
         // find id number ROI
-        Rect idNumberROI = new Rect((int)(maxLoc.x+tpl.cols()), (int)maxLoc.y, (int)(result.cols() - (maxLoc.x+tpl.cols())-40), tpl.rows()-10);
+        int x = (int) (maxLoc.x + tpl.cols());
+        int y = (int) maxLoc.y;
+        int widthA = (int)(result.cols() - (maxLoc.x + tpl.cols()) - 40);
+        int heightA = tpl.rows() - 10;
+        if (x < 0 || y < 0 || widthA < 0 || heightA < 0) {
+            return input;
+        }
+        Rect idNumberROI = new Rect(x, y, widthA, heightA);
         Mat idNumberArea = result.submat(idNumberROI);
 
         // 返回对象
@@ -94,21 +110,21 @@ public class CardNumberROIFinder {
         Mat gray = new Mat();
         Mat binary = new Mat();
         Imgproc.cvtColor(textImage, gray, Imgproc.COLOR_BGR2GRAY);
-        Imgproc.threshold(gray, binary, 0, 255,Imgproc.THRESH_BINARY_INV | Imgproc.THRESH_OTSU);
+        Imgproc.threshold(gray, binary, 0, 255, Imgproc.THRESH_BINARY_INV | Imgproc.THRESH_OTSU);
 
         // 寻找文本区域最新外接矩形
         int w = binary.cols();
         int h = binary.rows();
         List<Point> points = new ArrayList<>();
         int p = 0;
-        byte[] data = new byte[w*h];
+        byte[] data = new byte[w * h];
         binary.get(0, 0, data);
         int index = 0;
-        for(int row=0; row<h; row++) {
-            for(int col=0; col<w; col++) {
-                index = row*w + col;
-                p = data[index]&0xff;
-                if(p == 255) {
+        for (int row = 0; row < h; row++) {
+            for (int col = 0; col < w; col++) {
+                index = row * w + col;
+                p = data[index] & 0xff;
+                if (p == 255) {
                     points.add(new Point(col, row));
                 }
             }

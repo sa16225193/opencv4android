@@ -17,8 +17,6 @@ import com.googlecode.tesseract.android.TessBaseAPI;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
-import org.opencv.imgcodecs.Imgcodecs;
-import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -29,7 +27,7 @@ import gloomyfish.opencvdemo.ImageSelectUtils;
 import gloomyfish.opencvdemo.R;
 
 public class OcrDemoActivity extends AppCompatActivity implements View.OnClickListener {
-    private static final String DEFAULT_LANGUAGE = "nums";
+    private static final String DEFAULT_LANGUAGE = "eng";
     private String TAG = "OcrDemoActivity";
     private int REQUEST_CAPTURE_IMAGE = 1;
     private int option;
@@ -42,30 +40,30 @@ public class OcrDemoActivity extends AppCompatActivity implements View.OnClickLi
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_ocr_demo);
-        Button selectBtn = (Button)this.findViewById(R.id.select_image_btn);
-        Button ocrRecogBtn = (Button)this.findViewById(R.id.ocr_recognize_btn);
+        Button selectBtn = (Button) this.findViewById(R.id.select_image_btn);
+        Button ocrRecogBtn = (Button) this.findViewById(R.id.ocr_recognize_btn);
         ivPhoto = findViewById(R.id.chapter8_imageView);
         selectBtn.setOnClickListener(this);
         ocrRecogBtn.setOnClickListener(this);
         option = getIntent().getIntExtra("TYPE", 0);
         tempFile = new File(getExternalFilesDir("img"), System.currentTimeMillis() + ".jpg");
-        try {
-            initTessBaseAPI();
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
 
-        if(option == 2) {
-            this.setTitle("身份证号码识别演示");
-            ivPhoto.setImageResource(R.drawable.mockid);
-        } else if(option == 3) {
-            this.setTitle("偏斜校正演示");
-            ocrRecogBtn.setText("校正");
-            ivPhoto.setImageResource(R.drawable.jiaozheng);
-        }
-        else {
-            this.setTitle("Tesseract OCR文本识别演示");
-            ivPhoto.setImageResource(R.drawable.sample_text);
+        try {
+            if (option == 2) {
+                initNumberTessBaseAPI();
+                this.setTitle("身份证号码识别演示");
+                ivPhoto.setImageResource(R.drawable.mockid);
+            } else if (option == 3) {
+                this.setTitle("偏斜校正演示");
+                ocrRecogBtn.setText("校正");
+                ivPhoto.setImageResource(R.drawable.jiaozheng);
+            } else {
+                initTextTessBaseAPI();
+                this.setTitle("Tesseract OCR文本识别演示");
+                ivPhoto.setImageResource(R.drawable.sample_text);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage());
         }
     }
 
@@ -77,11 +75,11 @@ public class OcrDemoActivity extends AppCompatActivity implements View.OnClickLi
                 pickUpImage();
                 break;
             case R.id.ocr_recognize_btn:
-                if(option == 2) {
+                if (option == 2) {
                     recognizeCardId();
-                } else if(option == 3) {
+                } else if (option == 3) {
                     deSkewTextImage();
-                }else {
+                } else {
                     recognizeTextImage();
                 }
                 break;
@@ -138,25 +136,46 @@ public class OcrDemoActivity extends AppCompatActivity implements View.OnClickLi
     }
 
 
-    private void initTessBaseAPI() throws IOException {
+    private void initTextTessBaseAPI() throws IOException {
         baseApi = new TessBaseAPI();
         String datapath = Environment.getExternalStorageDirectory() + "/tesseract/";
         File dir = new File(datapath + "tessdata/");
-        if (!dir.exists()) {
-            dir.mkdirs();
-            InputStream input = getResources().openRawResource(R.raw.nums);
-            File file = new File(dir, "nums.traineddata");
-            FileOutputStream output = new FileOutputStream(file);
-            byte[] buff = new byte[1024];
-            int len = 0;
-            while((len = input.read(buff)) != -1) {
-                output.write(buff, 0, len);
-            }
-            input.close();
-            output.close();
+        dir.mkdirs();
+        InputStream input = getResources().openRawResource(R.raw.eng);
+        File file = new File(dir, "eng.traineddata");
+        FileOutputStream output = new FileOutputStream(file);
+        byte[] buff = new byte[1024];
+        int len = 0;
+        while ((len = input.read(buff)) != -1) {
+            output.write(buff, 0, len);
         }
-        boolean success = baseApi.init(datapath, DEFAULT_LANGUAGE);
-        if(success){
+        input.close();
+        output.close();
+        boolean success = baseApi.init(datapath, "eng");
+        if (success) {
+            Log.i(TAG, "load Tesseract OCR Engine successfully...");
+        } else {
+            Log.i(TAG, "WARNING:could not initialize Tesseract data...");
+        }
+    }
+
+    private void initNumberTessBaseAPI() throws IOException {
+        baseApi = new TessBaseAPI();
+        String datapath = Environment.getExternalStorageDirectory() + "/tesseract/";
+        File dir = new File(datapath + "tessdata/");
+        dir.mkdirs();
+        InputStream input = getResources().openRawResource(R.raw.nums);
+        File file = new File(dir, "nums.traineddata");
+        FileOutputStream output = new FileOutputStream(file);
+        byte[] buff = new byte[1024];
+        int len = 0;
+        while ((len = input.read(buff)) != -1) {
+            output.write(buff, 0, len);
+        }
+        input.close();
+        output.close();
+        boolean success = baseApi.init(datapath, "nums");
+        if (success) {
             Log.i(TAG, "load Tesseract OCR Engine successfully...");
         } else {
             Log.i(TAG, "WARNING:could not initialize Tesseract data...");
@@ -176,6 +195,8 @@ public class OcrDemoActivity extends AppCompatActivity implements View.OnClickLi
         String myIdNumber = baseApi.getUTF8Text();
         TextView txtView = findViewById(R.id.text_result_id);
         txtView.setText("身份证号码为:" + myIdNumber);
+        ivPhoto.setImageBitmap(temp);
+
     }
 
     private void recognizeTextImage() {
@@ -188,8 +209,8 @@ public class OcrDemoActivity extends AppCompatActivity implements View.OnClickLi
         baseApi.setImage(bmp);
         String recognizedText = baseApi.getUTF8Text();
         TextView txtView = findViewById(R.id.text_result_id);
-        if(!recognizedText.isEmpty()) {
-            txtView.append("识别结果:\n"+recognizedText);
+        if (!recognizedText.isEmpty()) {
+            txtView.append("识别结果:\n" + recognizedText);
         }
     }
 

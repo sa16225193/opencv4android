@@ -40,6 +40,8 @@ public interface AppConstants {
     public final static String CHAPTER_9TH_PGM_FACE = "人脸美化";
     public final static String CHAPTER_10TH = "第十章";
     public final static String CHAPTER_10TH_PGM = "跟踪与渲染演示";
+    public final static String CHAPTER_11TH = "第十一章";
+    public final static String CHAPTER_11TH_PGM = "文档扫描仪";
     // demo list
 
 }

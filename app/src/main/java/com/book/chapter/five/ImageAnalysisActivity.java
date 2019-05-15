@@ -420,6 +420,8 @@ public class ImageAnalysisActivity extends AppCompatActivity implements View.OnC
 //        Imgproc.threshold(gray, binary, 0, 255, Imgproc.THRESH_BINARY | Imgproc.THRESH_OTSU);
 
         //Canny
+        Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3));
+        Imgproc.dilate(src, dst, kernel);
 //        Imgproc.GaussianBlur(src, src, new Size(3, 3), 0);
         Imgproc.Canny(src, binary, 50, 150, 3, true);
 

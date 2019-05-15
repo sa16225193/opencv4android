@@ -7,6 +7,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
+import com.book.chapter.doc_scanner.DocScannerActivity;
 import com.book.chapter.eight.OcrDemoActivity;
 import com.book.chapter.five.ImageAnalysisActivity;
 import com.book.chapter.four.ConvolutionActivity;
@@ -119,6 +120,10 @@ public class SectionsActivity extends AppCompatActivity {
         else if(command.equals(AppConstants.CHAPTER_10TH_PGM)) {
             Intent intent = new Intent(this.getApplicationContext(), EyeRenderActivity.class);
             intent.putExtra("TYPE", 3);
+            startActivity(intent);
+        }
+        else if (command.equals(AppConstants.CHAPTER_11TH_PGM)) {
+            Intent intent = new Intent(this.getApplicationContext(), DocScannerActivity.class);
             startActivity(intent);
         }
     }

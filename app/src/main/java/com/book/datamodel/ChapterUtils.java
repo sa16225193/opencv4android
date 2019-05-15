@@ -21,6 +21,7 @@ public class ChapterUtils implements AppConstants {
         ItemDto item8 = new ItemDto(8, CHAPTER_8TH, "OCR识别");
         ItemDto item9 = new ItemDto(9, CHAPTER_9TH, "人脸美化");
         ItemDto item10 = new ItemDto(10, CHAPTER_10TH, "人眼实时跟踪与渲染");
+        ItemDto item11 = new ItemDto(11, CHAPTER_11TH, CHAPTER_11TH_PGM);
         items.add(item1);
         items.add(item2);
         items.add(item3);
@@ -31,6 +32,7 @@ public class ChapterUtils implements AppConstants {
         items.add(item8);
         items.add(item9);
         items.add(item10);
+        items.add(item11);
         return items;
     }
 
@@ -71,6 +73,9 @@ public class ChapterUtils implements AppConstants {
         }
         if(chapterNum == 10) {
             items.add(new ItemDto(1, CHAPTER_10TH_PGM,CHAPTER_10TH_PGM));
+        }
+        if (chapterNum == 11) {
+            items.add(new ItemDto(1, CHAPTER_11TH_PGM, CHAPTER_11TH_PGM));
         }
         return items;
     }
